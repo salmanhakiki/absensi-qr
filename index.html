@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Absensi QR Siswa</title>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<style>
+  :root {
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --green: #16a34a;
+    --green-bg: #dcfce7;
+    --yellow: #ca8a04;
+    --yellow-bg: #fef9c3;
+    --red: #dc2626;
+    --red-bg: #fee2e2;
+    --bg: #f4f5f9;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  header {
+    text-align: center;
+    padding: 8px 0 4px;
+  }
+
+  header h1 {
+    font-size: 1.3rem;
+    color: var(--primary-dark);
+  }
+
+  header p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  .card {
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    padding: 16px;
+  }
+
+  #reader {
+    width: 100%;
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  #reader video {
+    border-radius: 14px;
+  }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    justify-content: center;
+    margin-top: 4px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 0 rgba(22,163,74, 0.6);
+    animation: pulse 1.6s infinite;
+  }
+
+  .dot.offline { background: var(--red); animation: none; }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(22,163,74, 0.5); }
+    70% { box-shadow: 0 0 0 8px rgba(22,163,74, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(22,163,74, 0); }
+  }
+
+  .error-box {
+    display: none;
+    background: var(--red-bg);
+    color: var(--red);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  .error-box.show { display: block; }
+
+  /* ---- Overlay Modal ---- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 15, 20, 0.55);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    z-index: 999;
+    padding: 20px;
+  }
+
+  .overlay.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modal {
+    background: var(--card);
+    border-radius: 22px;
+    width: 100%;
+    max-width: 360px;
+    padding: 28px 24px 24px;
+    text-align: center;
+    transform: scale(0.85);
+    transition: transform 0.25s ease;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+  }
+
+  .overlay.show .modal {
+    transform: scale(1);
+  }
+
+  .modal-photo {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 14px;
+    border: 4px solid var(--bg);
+    background: var(--bg);
+  }
+
+  .modal h2 {
+    font-size: 1.15rem;
+    margin-bottom: 2px;
+  }
+
+  .modal .nis {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+
+  .modal .kelas {
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+  }
+
+  .badge.hadir { background: var(--green-bg); color: var(--green); }
+  .badge.terlambat { background: var(--yellow-bg); color: var(--yellow); }
+  .badge.error { background: var(--red-bg); color: var(--red); }
+
+  .modal .waktu {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .modal .msg {
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  .icon-circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+    font-size: 2rem;
+  }
+
+  .icon-circle.error { background: var(--red-bg); color: var(--red); }
+  .icon-circle.warning { background: var(--yellow-bg); color: var(--yellow); }
+
+  footer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    padding-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <h1>📋 Absensi Scan QR Siswa</h1>
+    <p>Arahkan kamera ke QR Code kartu siswa</p>
+  </header>
+
+  <div class="card">
+    <div id="reader"></div>
+    <div class="status-bar">
+      <span id="statusDot" class="dot"></span>
+      <span id="statusText">Kamera siap memindai</span>
+    </div>
+  </div>
+
+  <div id="errorBox" class="error-box"></div>
+
+  <footer>Sistem Absensi QR &middot; Terhubung Google Sheets</footer>
+</div>
+
+<!-- Overlay Modal -->
+<div id="overlay" class="overlay">
+  <div class="modal" id="modalContent">
+    <!-- diisi dinamis lewat JS -->
+  </div>
+</div>
+
+<script>
+/* ============================================================
+ *  KONFIGURASI
+ * ============================================================ */
+// GANTI dengan URL Web App hasil deploy Google Apps Script kamu
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt64RyZXncP391eVPp-x4Hk7tHqi6YI3VEhapG_A30isnxasm1dqeDJlpkPKiyNLR9mw/exec";
+
+const COOLDOWN_MS = 3000; // 3 detik jeda sebelum scan berikutnya
+
+/* ============================================================
+ *  AUDIO FEEDBACK (Web Audio API, tanpa file eksternal)
+ * ============================================================ */
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+
+function playTone(freq, duration, type = "sine", volume = 0.25) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.value = volume;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {
+    console.warn("Audio tidak dapat diputar:", e);
+  }
+}
+
+function playSuccessBeep() {
+  playTone(880, 0.15, "sine", 0.25);
+  setTimeout(() => playTone(1200, 0.15, "sine", 0.2), 150);
+}
+
+function playWarningBeep() {
+  playTone(600, 0.25, "triangle", 0.25);
+}
+
+function playErrorBuzz() {
+  playTone(220, 0.35, "sawtooth", 0.3);
+  setTimeout(() => playTone(180, 0.35, "sawtooth", 0.3), 200);
+}
+
+/* ============================================================
+ *  QR SCANNER
+ * ============================================================ */
+let html5QrCode;
+let isProcessing = false; // mencegah request ganda saat cooldown
+
+function initScanner() {
+  html5QrCode = new Html5Qrcode("reader");
+
+  const config = {
+    fps: 10,
+    qrbox: { width: 240, height: 240 },
+    aspectRatio: 1.0
+  };
+
+  Html5Qrcode.getCameras()
+    .then((cameras) => {
+      if (!cameras || cameras.length === 0) {
+        showFatalError("Kamera tidak ditemukan pada perangkat ini.");
+        return;
+      }
+
+      // Prioritaskan kamera belakang di HP
+      const backCam = cameras.find((c) =>
+        /back|rear|environment/i.test(c.label)
+      );
+      const cameraId = backCam ? backCam.id : cameras[0].id;
+
+      html5QrCode
+        .start(cameraId, config, onScanSuccess, onScanFailure)
+        .then(() => {
+          setStatus("Kamera aktif — arahkan ke QR Code", true);
+        })
+        .catch((err) => {
+          showFatalError("Gagal membuka kamera: " + err);
+        });
+    })
+    .catch((err) => {
+      showFatalError(
+        "Tidak dapat mengakses kamera. Pastikan izin kamera diaktifkan dan koneksi HTTPS aktif."
+      );
+    });
+}
+
+function onScanSuccess(decodedText) {
+  if (isProcessing) return; // abaikan hasil scan tambahan saat masih proses
+  isProcessing = true;
+
+  html5QrCode.pause(true);
+  setStatus("Memproses absensi...", true);
+
+  sendAttendance(decodedText.trim());
+}
+
+function onScanFailure() {
+  // dipanggil terus-menerus saat tidak ada QR terdeteksi, biarkan kosong
+}
+
+/* ============================================================
+ *  KOMUNIKASI KE BACKEND (Google Apps Script)
+ * ============================================================ */
+function sendAttendance(nis) {
+  if (!navigator.onLine) {
+    handleNetworkError();
+    return;
+  }
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "text/plain;charset=utf-8" // hindari CORS preflight ke Apps Script
+    },
+    body: JSON.stringify({ nis: nis })
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      handleServerResponse(data);
+    })
+    .catch((err) => {
+      console.error(err);
+      handleNetworkError();
+    });
+}
+
+function handleServerResponse(data) {
+  if (data.result === "success") {
+    playSuccessBeep();
+    showProfileModal(data.data, data.data.status);
+  } else if (data.result === "warning") {
+    playWarningBeep();
+    if (data.data) {
+      showProfileModal(data.data, "warning", data.message);
+    } else {
+      showMessageModal("warning", "Perhatian", data.message);
+    }
+  } else {
+    playErrorBuzz();
+    showMessageModal("error", "Gagal", data.message || "Terjadi kesalahan.");
+  }
+
+  scheduleResume();
+}
+
+function handleNetworkError() {
+  playErrorBuzz();
+  showMessageModal(
+    "error",
+    "Koneksi Terputus",
+    "Tidak dapat terhubung ke server. Periksa koneksi internet Anda."
+  );
+  scheduleResume();
+}
+
+function scheduleResume() {
+  setTimeout(() => {
+    hideOverlay();
+    setTimeout(() => {
+      isProcessing = false;
+      if (html5QrCode) {
+        html5QrCode.resume();
+        setStatus("Kamera aktif — arahkan ke QR Code", true);
+      }
+    }, 250);
+  }, COOLDOWN_MS);
+}
+
+/* ============================================================
+ *  UI: OVERLAY / MODAL
+ * ============================================================ */
+const overlay = document.getElementById("overlay");
+const modalContent = document.getElementById("modalContent");
+
+function showProfileModal(data, statusKey, warningMessage) {
+  let badgeClass = "hadir";
+  let badgeLabel = data.status;
+
+  if (statusKey === "warning") {
+    badgeClass = "terlambat";
+    badgeLabel = "Sudah Absen";
+  } else if (data.status === "Terlambat") {
+    badgeClass = "terlambat";
+  } else if (data.status === "Hadir") {
+    badgeClass = "hadir";
+  }
+
+  const fotoUrl = data.foto && data.foto.trim() !== ""
+    ? data.foto
+    : "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(data.nama || "Siswa");
+
+  modalContent.innerHTML = `
+    <img class="modal-photo" src="${escapeHtml(fotoUrl)}" alt="Foto Siswa"
+         onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(data.nama || 'Siswa')}';" />
+    <h2>${escapeHtml(data.nama)}</h2>
+    <div class="nis">NIS: ${escapeHtml(data.nis)}</div>
+    <div class="kelas">Kelas ${escapeHtml(data.kelas)}</div>
+    <span class="badge ${badgeClass}">${escapeHtml(badgeLabel)}</span>
+    <div class="waktu">Waktu: ${escapeHtml(data.waktu)}</div>
+    ${warningMessage ? `<div class="msg">${escapeHtml(warningMessage)}</div>` : ""}
+  `;
+
+  showOverlay();
+}
+
+function showMessageModal(type, title, message) {
+  const iconClass = type === "error" ? "error" : "warning";
+  const icon = type === "error" ? "&#10060;" : "&#9888;&#65039;";
+  const badgeClass = type === "error" ? "error" : "terlambat";
+
+  modalContent.innerHTML = `
+    <div class="icon-circle ${iconClass}">${icon}</div>
+    <h2>${escapeHtml(title)}</h2>
+    <div class="msg">${escapeHtml(message)}</div>
+  `;
+
+  showOverlay();
+}
+
+function showOverlay() {
+  overlay.classList.add("show");
+}
+
+function hideOverlay() {
+  overlay.classList.remove("show");
+}
+
+/* ============================================================
+ *  UI: STATUS BAR & ERROR BOX
+ * ============================================================ */
+const statusDot = document.getElementById("statusDot");
+const statusText = document.getElementById("statusText");
+const errorBox = document.getElementById("errorBox");
+
+function setStatus(text, online) {
+  statusText.textContent = text;
+  statusDot.classList.toggle("offline", !online);
+}
+
+function showFatalError(message) {
+  errorBox.textContent = message;
+  errorBox.classList.add("show");
+  setStatus("Kamera tidak aktif", false);
+}
+
+/* ============================================================
+ *  UTIL
+ * ============================================================ */
+function escapeHtml(str) {
+  if (str === undefined || str === null) return "";
+  return str
+    .toString()
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+/* ============================================================
+ *  MONITOR KONEKSI INTERNET
+ * ============================================================ */
+window.addEventListener("offline", () => {
+  setStatus("Tidak ada koneksi internet", false);
+});
+window.addEventListener("online", () => {
+  setStatus("Kamera aktif — arahkan ke QR Code", true);
+});
+
+/* ============================================================
+ *  START
+ * ============================================================ */
+window.addEventListener("load", initScanner);
+</script>
+
+</body>
+</html>
