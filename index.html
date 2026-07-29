@@ -3,419 +3,628 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Absensi QR Siswa</title>
+<title>SIGAP — Sistem Kehadiran Pelajar</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;600;700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <style>
   :root {
-    --primary: #4f46e5;
-    --primary-dark: #4338ca;
-    --green: #16a34a;
-    --green-bg: #dcfce7;
-    --yellow: #ca8a04;
-    --yellow-bg: #fef9c3;
-    --red: #dc2626;
-    --red-bg: #fee2e2;
-    --bg: #f4f5f9;
-    --card: #ffffff;
-    --text: #1f2937;
-    --muted: #6b7280;
+    --paper: #ece5d6;
+    --paper-deep: #ddd3bd;
+    --ink: #262220;
+    --ink-soft: #5b544a;
+    --line: #b9ac8f;
+    --ledger-green-deep: #1b2f27;
+    --stamp-green: #2f6b4f;
+    --stamp-amber: #a66a1e;
+    --stamp-red: #a03429;
+    --card: #f6f1e6;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
 
   body {
-    font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: 'Work Sans', sans-serif;
+    background: var(--paper);
+    background-image: repeating-linear-gradient(0deg, rgba(0,0,0,0.015) 0px, rgba(0,0,0,0.015) 1px, transparent 1px, transparent 3px);
+    color: var(--ink);
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    padding: 16px;
   }
 
-  .app {
+  .frame {
     width: 100%;
-    max-width: 480px;
+    max-width: 460px;
+    min-height: 100vh;
+    background: var(--paper);
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
     display: flex;
     flex-direction: column;
-    gap: 16px;
   }
 
-  header {
-    text-align: center;
-    padding: 8px 0 4px;
+  .plate {
+    background: var(--ledger-green-deep);
+    color: #e9e2cf;
+    padding: 20px 20px 18px;
+    position: relative;
   }
 
-  header h1 {
-    font-size: 1.3rem;
-    color: var(--primary-dark);
+  .plate .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    opacity: 0.68;
   }
 
-  header p {
-    font-size: 0.85rem;
-    color: var(--muted);
-    margin-top: 2px;
+  .plate h1 {
+    font-family: 'Zilla Slab', serif;
+    font-weight: 700;
+    font-size: 1.9rem;
+    margin-top: 5px;
+    letter-spacing: 0.01em;
   }
 
-  .card {
+  .plate .sub {
+    font-size: 0.8rem;
+    color: #c9c0a8;
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .plate::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 4px;
+    background: repeating-linear-gradient(90deg, var(--stamp-amber) 0 14px, transparent 14px 22px);
+    opacity: 0.85;
+  }
+
+  main {
+    flex: 1;
+    padding: 22px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .scan-panel {
+    border: 1px solid var(--line);
     background: var(--card);
-    border-radius: 18px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-    padding: 16px;
+    padding: 14px;
+    position: relative;
   }
 
-  #reader {
-    width: 100%;
-    border-radius: 14px;
+  .scan-panel .panel-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .viewfinder {
+    position: relative;
+    border: 1px solid var(--paper-deep);
+    background: #0f1613;
     overflow: hidden;
+    min-height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  #reader video {
-    border-radius: 14px;
+  #reader { width: 100%; }
+  #reader video { display: block; }
+
+  .cam-start {
+    background: transparent;
+    border: none;
+    color: #cfc7ae;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 20px;
+    cursor: pointer;
   }
 
-  .status-bar {
+  .cam-start .glyph {
+    display: block;
+    width: 46px;
+    height: 46px;
+    margin: 0 auto 12px;
+    border: 2px solid #cfc7ae;
+    border-radius: 50%;
+    position: relative;
+  }
+
+  .cam-start .glyph::before {
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 0; height: 0;
+    border-style: solid;
+    border-width: 8px 0 8px 13px;
+    border-color: transparent transparent transparent #cfc7ae;
+    transform: translate(-40%, -50%);
+  }
+
+  .corner {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-color: var(--stamp-amber);
+    z-index: 5;
+    pointer-events: none;
+  }
+  .corner.tl { top: 6px; left: 6px; border-top: 2px solid; border-left: 2px solid; }
+  .corner.tr { top: 6px; right: 6px; border-top: 2px solid; border-right: 2px solid; }
+  .corner.bl { bottom: 6px; left: 6px; border-bottom: 2px solid; border-left: 2px solid; }
+  .corner.br { bottom: 6px; right: 6px; border-bottom: 2px solid; border-right: 2px solid; }
+
+  .status-row {
+    margin-top: 12px;
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.85rem;
-    color: var(--muted);
-    justify-content: center;
-    margin-top: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.76rem;
+    color: var(--ink-soft);
   }
 
-  .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 0 0 rgba(22,163,74, 0.6);
-    animation: pulse 1.6s infinite;
-  }
-
-  .dot.offline { background: var(--red); animation: none; }
-
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(22,163,74, 0.5); }
-    70% { box-shadow: 0 0 0 8px rgba(22,163,74, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(22,163,74, 0); }
-  }
+  .status-row .mark { width: 7px; height: 7px; background: var(--stamp-green); flex-shrink: 0; }
+  .status-row .mark.off { background: var(--stamp-red); }
 
   .error-box {
     display: none;
-    background: var(--red-bg);
-    color: var(--red);
-    border-radius: 12px;
-    padding: 12px 14px;
-    font-size: 0.85rem;
-    text-align: center;
+    border: 1px solid var(--stamp-red);
+    background: #f8e9e6;
+    color: var(--stamp-red);
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    line-height: 1.45;
   }
-
   .error-box.show { display: block; }
 
-  /* ---- Overlay Modal ---- */
+  /* ---- Log panel ---- */
+  .log-panel {
+    border: 1px solid var(--line);
+    background: var(--card);
+  }
+
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .log-header .title {
+    font-family: 'Zilla Slab', serif;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .log-header .count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--ink-soft);
+  }
+
+  .log-list {
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .log-empty {
+    padding: 22px 14px;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+
+  .log-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border-bottom: 1px dashed var(--line);
+  }
+
+  .log-row:last-child { border-bottom: none; }
+
+  .log-photo {
+    width: 34px;
+    height: 34px;
+    object-fit: cover;
+    border: 1px solid var(--ink);
+    flex-shrink: 0;
+    background: var(--paper-deep);
+  }
+
+  .log-main { flex: 1; min-width: 0; }
+
+  .log-name {
+    font-size: 0.86rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .log-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--ink-soft);
+  }
+
+  .log-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border: 1px solid currentColor;
+    flex-shrink: 0;
+  }
+
+  .log-tag.hadir { color: var(--stamp-green); }
+  .log-tag.terlambat { color: var(--stamp-amber); }
+
+  .hint {
+    font-size: 0.76rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    border-top: 1px dashed var(--line);
+    padding-top: 12px;
+  }
+
+  footer {
+    text-align: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    padding: 12px 20px 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  /* ---- Ticket overlay ---- */
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(15, 15, 20, 0.55);
-    backdrop-filter: blur(2px);
+    background: rgba(20, 18, 14, 0.62);
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.2s ease;
     z-index: 999;
     padding: 20px;
   }
+  .overlay.show { opacity: 1; pointer-events: auto; }
 
-  .overlay.show {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .modal {
+  .ticket {
     background: var(--card);
-    border-radius: 22px;
     width: 100%;
-    max-width: 360px;
-    padding: 28px 24px 24px;
-    text-align: center;
-    transform: scale(0.85);
-    transition: transform 0.25s ease;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    max-width: 340px;
+    position: relative;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.3);
+    transform: translateY(10px) scale(0.97);
+    transition: transform 0.22s ease;
+    border: 1px solid var(--line);
   }
+  .overlay.show .ticket { transform: translateY(0) scale(1); }
 
-  .overlay.show .modal {
-    transform: scale(1);
-  }
-
-  .modal-photo {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin: 0 auto 14px;
-    border: 4px solid var(--bg);
-    background: var(--bg);
-  }
-
-  .modal h2 {
-    font-size: 1.15rem;
-    margin-bottom: 2px;
-  }
-
-  .modal .nis {
-    color: var(--muted);
-    font-size: 0.85rem;
-    margin-bottom: 4px;
-  }
-
-  .modal .kelas {
-    font-size: 0.9rem;
-    color: var(--text);
-    margin-bottom: 14px;
-  }
-
-  .badge {
-    display: inline-block;
-    padding: 6px 18px;
-    border-radius: 999px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    margin-bottom: 10px;
-  }
-
-  .badge.hadir { background: var(--green-bg); color: var(--green); }
-  .badge.terlambat { background: var(--yellow-bg); color: var(--yellow); }
-  .badge.error { background: var(--red-bg); color: var(--red); }
-
-  .modal .waktu {
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-
-  .modal .msg {
-    font-size: 0.9rem;
-    color: var(--text);
-    margin-top: 6px;
-    line-height: 1.4;
-  }
-
-  .icon-circle {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
+  .ticket-head {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 14px;
-    font-size: 2rem;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 12px 16px 10px;
+    border-bottom: 1px dashed var(--line);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .ticket-head .serial { font-size: 0.68rem; color: var(--ink-soft); letter-spacing: 0.05em; }
+  .ticket-head .clock { font-size: 0.68rem; color: var(--ink-soft); }
+
+  .ticket-body { padding: 18px 20px 20px; text-align: left; position: relative; }
+  .ticket-photo-row { display: flex; gap: 14px; align-items: flex-start; }
+
+  .id-photo {
+    width: 74px;
+    height: 92px;
+    object-fit: cover;
+    border: 1px solid var(--ink);
+    background: var(--paper-deep);
+    flex-shrink: 0;
   }
 
-  .icon-circle.error { background: var(--red-bg); color: var(--red); }
-  .icon-circle.warning { background: var(--yellow-bg); color: var(--yellow); }
+  .id-info h2 { font-family: 'Zilla Slab', serif; font-size: 1.2rem; font-weight: 700; line-height: 1.2; margin-bottom: 4px; }
+  .id-info .row { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--ink-soft); margin-top: 2px; }
+  .id-info .row b { color: var(--ink); font-weight: 600; }
 
-  footer {
-    text-align: center;
-    font-size: 0.75rem;
-    color: var(--muted);
-    padding-bottom: 10px;
+  .ticket-divider { border-top: 1px dashed var(--line); margin: 16px 0 12px; }
+
+  .stamp {
+    display: inline-block;
+    font-family: 'Zilla Slab', serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 5px 16px;
+    border: 3px solid currentColor;
+    border-radius: 3px;
+    transform: rotate(-4deg);
+    position: relative;
+  }
+  .stamp::before { content: ""; position: absolute; inset: 3px; border: 1px solid currentColor; border-radius: 2px; opacity: 0.5; }
+  .stamp.hadir { color: var(--stamp-green); }
+  .stamp.terlambat { color: var(--stamp-amber); }
+  .stamp.tolak { color: var(--stamp-red); }
+
+  .ticket-note { margin-top: 12px; font-size: 0.86rem; color: var(--ink); line-height: 1.45; }
+
+  .ticket-plain { padding: 26px 22px 24px; text-align: center; }
+  .ticket-plain .stamp { margin-bottom: 14px; }
+  .ticket-plain .title { font-family: 'Zilla Slab', serif; font-weight: 700; font-size: 1.15rem; margin-bottom: 8px; }
+  .ticket-plain .desc { font-size: 0.88rem; color: var(--ink-soft); line-height: 1.5; }
+
+  .perf {
+    position: absolute;
+    left: -1px; right: -1px;
+    height: 1px;
+    top: -1px;
+    background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 12px);
   }
 </style>
 </head>
 <body>
 
-<div class="app">
-  <header>
-    <h1>📋 Absensi Scan QR Siswa</h1>
-    <p>Arahkan kamera ke QR Code kartu siswa</p>
-  </header>
+<div class="frame">
 
-  <div class="card">
-    <div id="reader"></div>
-    <div class="status-bar">
-      <span id="statusDot" class="dot"></span>
-      <span id="statusText">Kamera siap memindai</span>
-    </div>
+  <div class="plate">
+    <div class="eyebrow">Kartu Digital &middot; Kehadiran Harian</div>
+    <h1>SIGAP</h1>
+    <div class="sub">Tempelkan kartu, sisanya biar sistem yang catat.</div>
   </div>
 
-  <div id="errorBox" class="error-box"></div>
+  <main>
+    <div class="scan-panel">
+      <div class="panel-label">
+        <span>Pemindai QR</span>
+        <span id="clock">--:--:--</span>
+      </div>
+      <div class="viewfinder" id="viewfinder">
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+        <button class="cam-start" id="camStart" type="button">
+          <span class="glyph"></span>
+          Ketuk untuk aktifkan kamera
+        </button>
+        <div id="reader" style="display:none;"></div>
+      </div>
+      <div class="status-row">
+        <span id="statusDot" class="mark off"></span>
+        <span id="statusText">kamera belum aktif</span>
+      </div>
+    </div>
 
-  <footer>Sistem Absensi QR &middot; Terhubung Google Sheets</footer>
+    <div id="errorBox" class="error-box"></div>
+
+    <div class="log-panel">
+      <div class="log-header">
+        <span class="title">Log Hari Ini</span>
+        <span class="count" id="logCount">0 tercatat</span>
+      </div>
+      <div class="log-list" id="logList">
+        <div class="log-empty">Belum ada yang absen hari ini.</div>
+      </div>
+    </div>
+
+    <div class="hint">
+      Posisikan kartu pelajar tepat di dalam bingkai. Status Hadir atau Terlambat ditentukan otomatis dari jam masuk yang berlaku, dan satu kartu hanya bisa dipakai sekali per hari.
+    </div>
+  </main>
+
+  <footer>KARTU · SEKALI PINDAI · SATU HARI</footer>
 </div>
 
-<!-- Overlay Modal -->
 <div id="overlay" class="overlay">
-  <div class="modal" id="modalContent">
-    <!-- diisi dinamis lewat JS -->
+  <div class="ticket" id="ticket">
+    <div class="perf"></div>
+    <div id="ticketInner"></div>
   </div>
 </div>
 
 <script>
-/* ============================================================
- *  KONFIGURASI
- * ============================================================ */
-// GANTI dengan URL Web App hasil deploy Google Apps Script kamu
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt64RyZXncP391eVPp-x4Hk7tHqi6Yl3VEhapG_A30isnxasm1dqeDJlpkPKiyNLR9mw/exec";
+const COOLDOWN_MS = 3000;
+const LOCAL_LOG_KEY = "absen_local_log";
+const LOG_REFRESH_MS = 20000;
 
-const COOLDOWN_MS = 3000; // 3 detik jeda sebelum scan berikutnya
+/* ---- jam berjalan ---- */
+function tickClock() {
+  document.getElementById("clock").textContent = new Date().toLocaleTimeString("id-ID", { hour12: false });
+}
+setInterval(tickClock, 1000);
+tickClock();
 
-/* ============================================================
- *  AUDIO FEEDBACK (Web Audio API, tanpa file eksternal)
- * ============================================================ */
-let audioCtx = null;
-function getAudioCtx() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  return audioCtx;
+/* ---- guard lokal per NIS per hari ---- */
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+}
+function readLocalLog() {
+  try { return JSON.parse(localStorage.getItem(LOCAL_LOG_KEY) || "{}"); } catch (e) { return {}; }
+}
+function writeLocalLog(log) {
+  try { localStorage.setItem(LOCAL_LOG_KEY, JSON.stringify(log)); } catch (e) {}
+}
+function getLocalRecord(nis) {
+  const rec = readLocalLog()[nis];
+  return (rec && rec.date === todayKey()) ? rec : null;
+}
+function saveLocalRecord(nis, waktu, status) {
+  const log = readLocalLog();
+  log[nis] = { date: todayKey(), waktu: waktu, status: status };
+  writeLocalLog(log);
 }
 
-function playTone(freq, duration, type = "sine", volume = 0.25) {
+/* ---- suara ---- */
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function playTone(freq, duration, type, volume, delay) {
+  delay = delay || 0;
   try {
     const ctx = getAudioCtx();
+    const startAt = ctx.currentTime + delay;
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = type;
-    osc.frequency.value = freq;
-    gain.gain.value = volume;
+    osc.frequency.setValueAtTime(freq, startAt);
+    gain.gain.setValueAtTime(volume, startAt);
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.start();
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-    osc.stop(ctx.currentTime + duration);
-  } catch (e) {
-    console.warn("Audio tidak dapat diputar:", e);
-  }
+    osc.start(startAt);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+    osc.stop(startAt + duration);
+  } catch (e) { console.warn("Audio gagal diputar:", e); }
 }
+function soundDetected() { playTone(1500, 0.06, "square", 0.12); }
+function soundAccepted() { playTone(740, 0.1, "sine", 0.22); playTone(1040, 0.12, "sine", 0.2, 0.11); }
+function soundHold() { playTone(520, 0.22, "triangle", 0.22); }
+function soundRejected() { playTone(300, 0.16, "sawtooth", 0.24); playTone(210, 0.2, "sawtooth", 0.24, 0.14); }
 
-function playSuccessBeep() {
-  playTone(880, 0.15, "sine", 0.25);
-  setTimeout(() => playTone(1200, 0.15, "sine", 0.2), 150);
-}
-
-function playWarningBeep() {
-  playTone(600, 0.25, "triangle", 0.25);
-}
-
-function playErrorBuzz() {
-  playTone(220, 0.35, "sawtooth", 0.3);
-  setTimeout(() => playTone(180, 0.35, "sawtooth", 0.3), 200);
-}
-
-/* ============================================================
- *  QR SCANNER
- * ============================================================ */
+/* ---- kamera & scanner ---- */
 let html5QrCode;
-let isProcessing = false; // mencegah request ganda saat cooldown
+let isProcessing = false;
 
-function initScanner() {
+document.getElementById("camStart").addEventListener("click", startCamera);
+
+function startCamera() {
+  const btn = document.getElementById("camStart");
+  btn.disabled = true;
+  btn.textContent = "membuka kamera…";
+  setStatus("meminta izin kamera…", true);
+
   html5QrCode = new Html5Qrcode("reader");
-
-  const config = {
-    fps: 10,
-    qrbox: { width: 240, height: 240 },
-    aspectRatio: 1.0
-  };
+  const config = { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 };
 
   Html5Qrcode.getCameras()
     .then((cameras) => {
       if (!cameras || cameras.length === 0) {
-        showFatalError("Kamera tidak ditemukan pada perangkat ini.");
+        showFatalError("Kamera tidak terdeteksi pada perangkat ini.");
         return;
       }
-
-      // Prioritaskan kamera belakang di HP
-      const backCam = cameras.find((c) =>
-        /back|rear|environment/i.test(c.label)
-      );
+      const backCam = cameras.find((c) => /back|rear|environment/i.test(c.label));
       const cameraId = backCam ? backCam.id : cameras[0].id;
 
       html5QrCode
-        .start(cameraId, config, onScanSuccess, onScanFailure)
+        .start(cameraId, config, onScanSuccess, () => {})
         .then(() => {
-          setStatus("Kamera aktif — arahkan ke QR Code", true);
+          document.getElementById("camStart").style.display = "none";
+          document.getElementById("reader").style.display = "block";
+          setStatus("siap memindai", true);
         })
-        .catch((err) => {
-          showFatalError("Gagal membuka kamera: " + err);
-        });
+        .catch((err) => showFatalError("Kamera gagal dibuka: " + err));
     })
-    .catch((err) => {
-      showFatalError(
-        "Tidak dapat mengakses kamera. Pastikan izin kamera diaktifkan dan koneksi HTTPS aktif."
-      );
+    .catch(() => {
+      showFatalError("Tidak dapat mengakses kamera. Periksa izin kamera pada peramban, atau pastikan halaman dibuka melalui HTTPS.");
     });
 }
 
 function onScanSuccess(decodedText) {
-  if (isProcessing) return; // abaikan hasil scan tambahan saat masih proses
+  if (isProcessing) return;
   isProcessing = true;
 
+  soundDetected();
   html5QrCode.pause(true);
-  setStatus("Memproses absensi...", true);
+  setStatus("memverifikasi kartu…", true);
 
-  sendAttendance(decodedText.trim());
-}
-
-function onScanFailure() {
-  // dipanggil terus-menerus saat tidak ada QR terdeteksi, biarkan kosong
-}
-
-/* ============================================================
- *  KOMUNIKASI KE BACKEND (Google Apps Script)
- * ============================================================ */
-function sendAttendance(nis) {
-  if (!navigator.onLine) {
-    handleNetworkError();
+  const nis = decodedText.trim();
+  const local = getLocalRecord(nis);
+  if (local) {
+    soundHold();
+    showPlainTicket("terlambat", "Sudah Tercatat", "Kartu ini sudah dipindai hari ini pada pukul " + local.waktu + ".");
+    scheduleResume();
     return;
   }
 
+  sendAttendance(nis);
+}
+
+/* ---- komunikasi backend ---- */
+function sendAttendance(nis) {
+  if (!navigator.onLine) { handleNetworkError("Perangkat tidak terhubung ke internet."); return; }
+
   fetch(SCRIPT_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "text/plain;charset=utf-8" // hindari CORS preflight ke Apps Script
-    },
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify({ nis: nis })
   })
-    .then((res) => res.json())
-    .then((data) => {
-      handleServerResponse(data);
+    .then((res) => {
+      if (!res.ok) throw new Error("HTTP " + res.status + " " + res.statusText);
+      return res.text();
+    })
+    .then((text) => {
+      let data;
+      try { data = JSON.parse(text); }
+      catch (e) { throw new Error("Respons server tidak sesuai. Periksa alamat SCRIPT_URL dan pengaturan akses deployment."); }
+      handleServerResponse(data, nis);
     })
     .catch((err) => {
       console.error(err);
-      handleNetworkError();
+      handleNetworkError(err.message);
     });
 }
 
-function handleServerResponse(data) {
+function handleServerResponse(data, nis) {
   if (data.result === "success") {
-    playSuccessBeep();
-    showProfileModal(data.data, data.data.status);
+    soundAccepted();
+    saveLocalRecord(nis, data.data.waktu, data.data.status);
+    showProfileTicket(data.data, false);
+    fetchLog();
   } else if (data.result === "warning") {
-    playWarningBeep();
+    soundHold();
     if (data.data) {
-      showProfileModal(data.data, "warning", data.message);
+      saveLocalRecord(nis, data.data.waktu, data.data.status);
+      showProfileTicket(data.data, true, data.message);
     } else {
-      showMessageModal("warning", "Perhatian", data.message);
+      showPlainTicket("terlambat", "Sudah Tercatat", data.message);
     }
   } else {
-    playErrorBuzz();
-    showMessageModal("error", "Gagal", data.message || "Terjadi kesalahan.");
+    soundRejected();
+    showPlainTicket("tolak", "Ditolak", data.message || "Kartu tidak dapat diproses.");
   }
-
   scheduleResume();
 }
 
-function handleNetworkError() {
-  playErrorBuzz();
-  showMessageModal(
-    "error",
-    "Koneksi Terputus",
-    "Tidak dapat terhubung ke server. Periksa koneksi internet Anda."
-  );
+function handleNetworkError(detail) {
+  soundRejected();
+  showPlainTicket("tolak", "Tidak Terhubung", detail || "Tidak dapat menghubungi server. Periksa koneksi internet.");
   scheduleResume();
 }
 
@@ -426,117 +635,140 @@ function scheduleResume() {
       isProcessing = false;
       if (html5QrCode) {
         html5QrCode.resume();
-        setStatus("Kamera aktif — arahkan ke QR Code", true);
+        setStatus("siap memindai", true);
       }
     }, 250);
   }, COOLDOWN_MS);
 }
 
-/* ============================================================
- *  UI: OVERLAY / MODAL
- * ============================================================ */
-const overlay = document.getElementById("overlay");
-const modalContent = document.getElementById("modalContent");
+/* ---- log kehadiran hari ini ---- */
+const logList = document.getElementById("logList");
+const logCount = document.getElementById("logCount");
 
-function showProfileModal(data, statusKey, warningMessage) {
-  let badgeClass = "hadir";
-  let badgeLabel = data.status;
+function fetchLog() {
+  fetch(SCRIPT_URL + "?action=log")
+    .then((res) => res.text())
+    .then((text) => {
+      let data;
+      try { data = JSON.parse(text); } catch (e) { return; }
+      if (data.result === "success" && Array.isArray(data.data)) {
+        renderLog(data.data);
+      }
+    })
+    .catch(() => { /* log tidak wajib berhasil, diamkan saja kalau gagal */ });
+}
 
-  if (statusKey === "warning") {
-    badgeClass = "terlambat";
-    badgeLabel = "Sudah Absen";
-  } else if (data.status === "Terlambat") {
-    badgeClass = "terlambat";
-  } else if (data.status === "Hadir") {
-    badgeClass = "hadir";
+function renderLog(rows) {
+  logCount.textContent = rows.length + " tercatat";
+
+  if (rows.length === 0) {
+    logList.innerHTML = '<div class="log-empty">Belum ada yang absen hari ini.</div>';
+    return;
   }
+
+  logList.innerHTML = rows.map((r) => {
+    const tagClass = r.status === "Terlambat" ? "terlambat" : "hadir";
+    const fotoUrl = r.foto && r.foto.trim() !== ""
+      ? r.foto
+      : "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(r.nama || "Siswa") + "&backgroundColor=ddd3bd";
+
+    return `
+      <div class="log-row">
+        <img class="log-photo" src="${escapeHtml(fotoUrl)}" alt=""
+             onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(r.nama || 'Siswa')}&backgroundColor=ddd3bd';" />
+        <div class="log-main">
+          <div class="log-name">${escapeHtml(r.nama)}</div>
+          <div class="log-meta">${escapeHtml(r.kelas)} &middot; ${escapeHtml(r.waktu)}</div>
+        </div>
+        <span class="log-tag ${tagClass}">${escapeHtml(r.status)}</span>
+      </div>
+    `;
+  }).join("");
+}
+
+/* ---- tiket / overlay ---- */
+const overlay = document.getElementById("overlay");
+const ticketInner = document.getElementById("ticketInner");
+
+function showProfileTicket(data, isWarning, warningMessage) {
+  let stampClass = "hadir";
+  let stampLabel = data.status;
+  if (isWarning) { stampClass = "terlambat"; stampLabel = "Sudah Tercatat"; }
+  else if (data.status === "Terlambat") { stampClass = "terlambat"; }
 
   const fotoUrl = data.foto && data.foto.trim() !== ""
     ? data.foto
-    : "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(data.nama || "Siswa");
+    : "https://api.dicebear.com/7.x/initials/svg?seed=" + encodeURIComponent(data.nama || "Siswa") + "&backgroundColor=ddd3bd&textColor=262220";
 
-  modalContent.innerHTML = `
-    <img class="modal-photo" src="${escapeHtml(fotoUrl)}" alt="Foto Siswa"
-         onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(data.nama || 'Siswa')}';" />
-    <h2>${escapeHtml(data.nama)}</h2>
-    <div class="nis">NIS: ${escapeHtml(data.nis)}</div>
-    <div class="kelas">Kelas ${escapeHtml(data.kelas)}</div>
-    <span class="badge ${badgeClass}">${escapeHtml(badgeLabel)}</span>
-    <div class="waktu">Waktu: ${escapeHtml(data.waktu)}</div>
-    ${warningMessage ? `<div class="msg">${escapeHtml(warningMessage)}</div>` : ""}
+  ticketInner.innerHTML = `
+    <div class="ticket-head">
+      <span class="serial">NO. ${escapeHtml(data.nis)}</span>
+      <span class="clock">${escapeHtml(data.waktu)}</span>
+    </div>
+    <div class="ticket-body">
+      <div class="ticket-photo-row">
+        <img class="id-photo" src="${escapeHtml(fotoUrl)}" alt=""
+             onerror="this.onerror=null;this.src='https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(data.nama || 'Siswa')}&backgroundColor=ddd3bd';" />
+        <div class="id-info">
+          <h2>${escapeHtml(data.nama)}</h2>
+          <div class="row">Kelas <b>${escapeHtml(data.kelas)}</b></div>
+          <div class="row">NIS <b>${escapeHtml(data.nis)}</b></div>
+        </div>
+      </div>
+      <div class="ticket-divider"></div>
+      <span class="stamp ${stampClass}">${escapeHtml(stampLabel)}</span>
+      ${warningMessage ? `<div class="ticket-note">${escapeHtml(warningMessage)}</div>` : ""}
+    </div>
   `;
-
   showOverlay();
 }
 
-function showMessageModal(type, title, message) {
-  const iconClass = type === "error" ? "error" : "warning";
-  const icon = type === "error" ? "&#10060;" : "&#9888;&#65039;";
-  const badgeClass = type === "error" ? "error" : "terlambat";
-
-  modalContent.innerHTML = `
-    <div class="icon-circle ${iconClass}">${icon}</div>
-    <h2>${escapeHtml(title)}</h2>
-    <div class="msg">${escapeHtml(message)}</div>
+function showPlainTicket(stampClass, title, desc) {
+  ticketInner.innerHTML = `
+    <div class="ticket-plain">
+      <span class="stamp ${stampClass}">${escapeHtml(title)}</span>
+      <div class="title">${escapeHtml(title)}</div>
+      <div class="desc">${escapeHtml(desc)}</div>
+    </div>
   `;
-
   showOverlay();
 }
 
-function showOverlay() {
-  overlay.classList.add("show");
-}
+function showOverlay() { overlay.classList.add("show"); }
+function hideOverlay() { overlay.classList.remove("show"); }
 
-function hideOverlay() {
-  overlay.classList.remove("show");
-}
-
-/* ============================================================
- *  UI: STATUS BAR & ERROR BOX
- * ============================================================ */
+/* ---- status panel ---- */
 const statusDot = document.getElementById("statusDot");
 const statusText = document.getElementById("statusText");
 const errorBox = document.getElementById("errorBox");
 
 function setStatus(text, online) {
   statusText.textContent = text;
-  statusDot.classList.toggle("offline", !online);
+  statusDot.classList.toggle("off", !online);
 }
 
 function showFatalError(message) {
   errorBox.textContent = message;
   errorBox.classList.add("show");
-  setStatus("Kamera tidak aktif", false);
+  setStatus("kamera tidak aktif", false);
+  document.getElementById("camStart").disabled = false;
+  document.getElementById("camStart").textContent = "coba lagi";
 }
 
-/* ============================================================
- *  UTIL
- * ============================================================ */
 function escapeHtml(str) {
   if (str === undefined || str === null) return "";
-  return str
-    .toString()
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  return str.toString()
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
-/* ============================================================
- *  MONITOR KONEKSI INTERNET
- * ============================================================ */
-window.addEventListener("offline", () => {
-  setStatus("Tidak ada koneksi internet", false);
-});
-window.addEventListener("online", () => {
-  setStatus("Kamera aktif — arahkan ke QR Code", true);
-});
+window.addEventListener("offline", () => setStatus("tidak ada koneksi internet", false));
+window.addEventListener("online", () => setStatus("siap memindai", true));
 
-/* ============================================================
- *  START
- * ============================================================ */
-window.addEventListener("load", initScanner);
+window.addEventListener("load", () => {
+  fetchLog();
+  setInterval(fetchLog, LOG_REFRESH_MS);
+});
 </script>
 
 </body>
