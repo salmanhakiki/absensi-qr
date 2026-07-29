@@ -497,7 +497,7 @@
       <div class="admin-header">Panel Petugas</div>
       <div class="admin-buttons">
         <button class="admin-btn" id="btnPdfAbsen" type="button" onclick="downloadPdf('absen', 'btnPdfAbsen')">PDF Absensi Hari Ini</button>
-        <button class="admin-btn" id="btnPdfSiswa" type="button" onclick="downloadPdf('siswa', 'btnPdfSiswa')">PDF Data Murid</button>
+        <button class="admin-btn" id="btnUploadDrive" type="button" onclick="uploadToDrive()">Upload ke Cloud</button>
       </div>
       <div class="admin-buttons" style="margin-top:8px;">
         <button class="admin-btn" id="btnDownload" type="button" onclick="downloadCsv()">Unduh CSV</button>
@@ -506,7 +506,7 @@
       <div class="admin-buttons" style="margin-top:8px;">
         <button class="admin-btn danger" id="btnClear" type="button" onclick="clearAllData()">Bersihkan Data Absensi</button>
       </div>
-      <div class="admin-note">PDF Absensi cocok dibagikan ke grup WA orang tua. Reset Perangkat hanya menghapus penanda "sudah absen" di HP ini (dipakai setelah kamu menghapus data manual di spreadsheet). Bersihkan Data menghapus seluruh riwayat absensi di spreadsheet secara permanen — wajib mengetik YA untuk konfirmasi.</div>
+      <div class="admin-note">PDF Absensi cocok dibagikan ke grup WA orang tua. Upload ke Cloud menyimpan rekap hari ini ke Google Drive, otomatis masuk folder bulan berjalan (folder baru terbuat sendiri tiap bulan berganti). Reset Perangkat hanya menghapus penanda "sudah absen" di HP ini (dipakai setelah kamu menghapus data manual di spreadsheet). Bersihkan Data menghapus seluruh riwayat absensi di spreadsheet secara permanen — wajib mengetik YA untuk konfirmasi.</div>
     </div>
 
     <div class="hint">
@@ -525,7 +525,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyazwNGMrTcyGFsOkQm6o33ZjBvPjEeiJBLDqWryHDcP2oa-EPVYnVc2uuqHcvOtW_Fbg/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4BSg8oD_RCD0CS51F85WHcpzFR0hq2VEIGrB1uljHzbMRGDjVefV0Tj64fPtgaaptMQ/exec";
 const COOLDOWN_MS = 3000;
 const LOG_REFRESH_MS = 20000;
 
@@ -881,6 +881,52 @@ function downloadPdf(type, btnId) {
     })
     .catch((err) => {
       alert("Gagal mengunduh PDF: " + err.message);
+    })
+    .finally(() => {
+      btn.textContent = originalLabel;
+      btn.disabled = false;
+    });
+}
+
+function uploadToDrive() {
+  const typed = prompt(
+    "Rekap absensi hari ini akan diunggah ke Google Drive.\n\nKetik YA (huruf besar) untuk melanjutkan:"
+  );
+  if (typed === null) return;
+  if (typed.trim() !== "YA") {
+    alert("Dibatalkan — teks konfirmasi tidak sesuai.");
+    return;
+  }
+
+  const btn = document.getElementById("btnUploadDrive");
+  const originalLabel = btn.textContent;
+  btn.textContent = "mengunggah…";
+  btn.disabled = true;
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify({ action: "upload_drive" })
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("HTTP " + res.status + " " + res.statusText);
+      return res.text();
+    })
+    .then((text) => {
+      let data;
+      try { data = JSON.parse(text); } catch (e) {
+        alert("Respons server tidak valid. Pastikan Code.gs sudah di-deploy versi terbaru.");
+        return;
+      }
+      if (data.result === "success") {
+        const openIt = confirm(data.message + "\n\nBuka folder di Drive sekarang?");
+        if (openIt && data.folderUrl) window.open(data.folderUrl, "_blank");
+      } else {
+        alert(data.message || "Gagal mengunggah ke Drive.");
+      }
+    })
+    .catch((err) => {
+      alert("Gagal mengunggah ke Drive: " + err.message);
     })
     .finally(() => {
       btn.textContent = originalLabel;
