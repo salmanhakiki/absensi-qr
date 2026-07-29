@@ -506,7 +506,7 @@
       <div class="admin-buttons" style="margin-top:8px;">
         <button class="admin-btn danger" id="btnClear" type="button" onclick="clearAllData()">Bersihkan Data Absensi</button>
       </div>
-      <div class="admin-note">PDF Absensi cocok dibagikan ke grup WA orang tua. Reset Perangkat hanya menghapus penanda "sudah absen" di HP ini (dipakai setelah kamu menghapus data manual di spreadsheet). Bersihkan Data menghapus seluruh riwayat absensi di spreadsheet secara permanen dan memerlukan PIN admin (diatur di sheet Pengaturan, baris PIN_Admin).</div>
+      <div class="admin-note">PDF Absensi cocok dibagikan ke grup WA orang tua. Reset Perangkat hanya menghapus penanda "sudah absen" di HP ini (dipakai setelah kamu menghapus data manual di spreadsheet). Bersihkan Data menghapus seluruh riwayat absensi di spreadsheet secara permanen — wajib mengetik YA untuk konfirmasi.</div>
     </div>
 
     <div class="hint">
@@ -898,9 +898,6 @@ function clearAllData() {
     return;
   }
 
-  const pin = prompt("Masukkan PIN admin untuk konfirmasi akhir:");
-  if (pin === null || pin.trim() === "") return;
-
   const btn = document.getElementById("btnClear");
   const originalLabel = btn.textContent;
   btn.textContent = "menghapus…";
@@ -909,7 +906,7 @@ function clearAllData() {
   fetch(SCRIPT_URL, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action: "clear_all", pin: pin.trim() })
+    body: JSON.stringify({ action: "clear_all" })
   })
     .then((res) => res.text())
     .then((text) => {
