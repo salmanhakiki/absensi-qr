@@ -126,7 +126,12 @@
   }
 
   #reader { width: 100%; }
-  #reader video { display: block; }
+  #reader video {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    object-fit: cover;
+  }
 
   .cam-start {
     background: transparent;
@@ -456,7 +461,7 @@
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyt64RyZXncP391eVPp-x4Hk7tHqi6Yl3VEhapG_A30isnxasm1dqeDJlpkPKiyNLR9mw/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/GANTI_DENGAN_DEPLOYMENT_ID/exec";
 const COOLDOWN_MS = 3000;
 const LOCAL_LOG_KEY = "absen_local_log";
 const LOG_REFRESH_MS = 20000;
@@ -533,27 +538,54 @@ function startCamera() {
   html5QrCode = new Html5Qrcode("reader");
   const config = { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 };
 
-  Html5Qrcode.getCameras()
-    .then((cameras) => {
-      if (!cameras || cameras.length === 0) {
-        showFatalError("Kamera tidak terdeteksi pada perangkat ini.");
-        return;
-      }
-      const backCam = cameras.find((c) => /back|rear|environment/i.test(c.label));
-      const cameraId = backCam ? backCam.id : cameras[0].id;
+  const onStarted = () => {
+    document.getElementById("camStart").style.display = "none";
+    document.getElementById("reader").style.display = "block";
+    setStatus("siap memindai", true);
+    watchForBlankVideo();
+  };
 
-      html5QrCode
-        .start(cameraId, config, onScanSuccess, () => {})
-        .then(() => {
-          document.getElementById("camStart").style.display = "none";
-          document.getElementById("reader").style.display = "block";
-          setStatus("siap memindai", true);
-        })
-        .catch((err) => showFatalError("Kamera gagal dibuka: " + err));
-    })
+  // Cara pertama: minta langsung kamera belakang lewat facingMode.
+  // Ini lebih stabil lintas browser Android dibanding memilih cameraId hasil enumerasi,
+  // yang di sebagian browser berhasil "start" tapi videonya tidak pernah tampil (layar hitam).
+  html5QrCode
+    .start({ facingMode: "environment" }, config, onScanSuccess, () => {})
+    .then(onStarted)
     .catch(() => {
-      showFatalError("Tidak dapat mengakses kamera. Periksa izin kamera pada peramban, atau pastikan halaman dibuka melalui HTTPS.");
+      // Fallback: enumerasi daftar kamera dan pilih manual.
+      Html5Qrcode.getCameras()
+        .then((cameras) => {
+          if (!cameras || cameras.length === 0) {
+            showFatalError("Kamera tidak terdeteksi pada perangkat ini.");
+            return;
+          }
+          const backCam = cameras.find((c) => /back|rear|environment/i.test(c.label));
+          const cameraId = backCam ? backCam.id : cameras[0].id;
+
+          html5QrCode
+            .start(cameraId, config, onScanSuccess, () => {})
+            .then(onStarted)
+            .catch((err) => showFatalError("Kamera gagal dibuka: " + err));
+        })
+        .catch(() => {
+          showFatalError("Tidak dapat mengakses kamera. Periksa izin kamera pada peramban, atau pastikan halaman dibuka melalui HTTPS.");
+        });
     });
+}
+
+function watchForBlankVideo() {
+  setTimeout(() => {
+    const video = document.querySelector("#reader video");
+    // readyState 0/1 setelah beberapa detik berarti stream tidak pernah benar-benar mengalir.
+    if (video && video.readyState < 2) {
+      showFatalError("Kamera terbuka tapi tidak menampilkan gambar. Coba tutup tab, buka kembali halaman ini, lalu aktifkan kamera lagi. Kalau masih hitam, coba browser lain (Chrome bawaan biasanya paling stabil).");
+      if (html5QrCode) {
+        html5QrCode.stop().catch(() => {});
+      }
+      document.getElementById("reader").style.display = "none";
+      document.getElementById("camStart").style.display = "block";
+    }
+  }, 3500);
 }
 
 function onScanSuccess(decodedText) {
